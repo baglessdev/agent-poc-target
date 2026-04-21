@@ -8,6 +8,7 @@ import (
 func registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/healthz", healthz)
 	mux.HandleFunc("/readyz", readyz)
+	mux.HandleFunc("/version", version)
 }
 
 func healthz(w http.ResponseWriter, _ *http.Request) {
@@ -16,6 +17,10 @@ func healthz(w http.ResponseWriter, _ *http.Request) {
 
 func readyz(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"ready": true})
+}
+
+func version(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{"version": "dev"})
 }
 
 func writeJSON(w http.ResponseWriter, status int, body any) {
