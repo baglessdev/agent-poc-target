@@ -1,0 +1,45 @@
+# Second manifest for the two-sandbox POC.
+# Adds a /version endpoint. Trivially passable; exists to feed a real,
+# open PR to the reviewer sandbox.
+
+[task]
+  id          = "002-add-version-endpoint"
+  description = """
+Add a GET /version endpoint that returns 200 with JSON body {"version": "dev"}.
+Register it in registerRoutes alongside /healthz and /readyz. Add a unit test
+TestVersion that mirrors the style of TestHealthz and TestReadyz. Keep main.go
+and go.mod untouched.
+"""
+  type        = "feature"
+
+[agent]
+  ready          = true
+  iteration_cap  = 3
+  wall_clock_min = 15
+
+[model]
+  name        = "claude-sonnet-4-5"
+  temperature = 0
+
+[[tier2.targets]]
+  path = "handlers.go"
+[[tier2.targets]]
+  path = "handlers_test.go"
+
+[[tier2.includes]]
+  path = "main.go"
+  mode = "full"
+[[tier2.includes]]
+  path = "DESIGN.md"
+  mode = "full"
+[[tier2.includes]]
+  path = "AGENTS.md"
+  mode = "full"
+
+[verify]
+  steps = [
+    "task lint",
+    "task build",
+    "task test",
+  ]
+  max_turns = 15
