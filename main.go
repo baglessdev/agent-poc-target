@@ -8,7 +8,7 @@ import (
 func main() {
 	mux := http.NewServeMux()
 	registerRoutes(mux)
-	handler := withRequestID(mux)
+	handler := withLogging(withRequestID(mux))
 
 	addr := ":8080"
 	log.Printf("listening on %s", addr)
