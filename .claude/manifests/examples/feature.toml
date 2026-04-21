@@ -1,0 +1,30 @@
+# Template for a feature manifest.
+# Copy to ../<id>-<slug>.toml, fill in, set ready = true when dispatching.
+
+[task]
+  id          = "NNN-short-slug"
+  description = """
+One-paragraph scope. What the endpoint / function / change should do.
+Include acceptance criteria in plain English.
+"""
+  type        = "feature"
+
+[agent]
+  ready          = false
+  iteration_cap  = 5
+  wall_clock_min = 30
+
+[model]
+  name        = "claude-sonnet-4-5"
+  temperature = 0
+
+[[tier2.targets]]
+  path = "path/to/file.go"
+
+[[tier2.includes]]
+  path = "path/to/context.go"
+  mode = "full"
+
+[verify]
+  steps = ["task verify"]
+  max_turns = 20

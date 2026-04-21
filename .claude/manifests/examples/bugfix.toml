@@ -1,0 +1,32 @@
+# Template for a bugfix manifest.
+# Copy to ../<id>-<slug>.toml, fill in, set ready = true when dispatching.
+
+[task]
+  id          = "NNN-fix-slug"
+  description = """
+What's broken, how to reproduce, what the correct behavior is.
+Reference the failing test or observed output.
+"""
+  type        = "bugfix"
+
+[agent]
+  ready          = false
+  iteration_cap  = 3
+  wall_clock_min = 20
+
+[model]
+  name        = "claude-sonnet-4-5"
+  temperature = 0
+
+[[tier2.targets]]
+  path = "path/to/broken.go"
+[[tier2.targets]]
+  path = "path/to/broken_test.go"
+
+[[tier2.includes]]
+  path = "path/to/nearby.go"
+  mode = "full"
+
+[verify]
+  steps = ["task verify"]
+  max_turns = 15

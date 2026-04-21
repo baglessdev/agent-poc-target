@@ -1,0 +1,47 @@
+# First manifest for the two-sandbox POC.
+# Trivial enough to succeed on one Claude pass; exercises the full loop
+# end-to-end (coder → PR → CI green → reviewer comments → human merge).
+
+[task]
+  id          = "001-add-readyz"
+  description = """
+Add a GET /readyz endpoint that returns 200 with JSON body {"ready": true}.
+Register it in registerRoutes alongside /healthz. Add a unit test TestReadyz
+that mirrors the style of TestHealthz. Keep main.go untouched.
+"""
+  type        = "feature"
+
+[agent]
+  ready          = true
+  iteration_cap  = 3
+  wall_clock_min = 15
+
+[model]
+  name        = "claude-sonnet-4-5"
+  temperature = 0
+
+# Files the agent may edit. Anything outside this list is off-limits.
+[[tier2.targets]]
+  path = "handlers.go"
+[[tier2.targets]]
+  path = "handlers_test.go"
+
+# Files the agent should read in full for context but must not edit.
+[[tier2.includes]]
+  path = "main.go"
+  mode = "full"
+[[tier2.includes]]
+  path = "DESIGN.md"
+  mode = "full"
+[[tier2.includes]]
+  path = "AGENTS.md"
+  mode = "full"
+
+# Acceptance: must pass locally before opening the PR.
+[verify]
+  steps = [
+    "task lint",
+    "task build",
+    "task test",
+  ]
+  max_turns = 15
