@@ -185,3 +185,83 @@ func TestEcho(t *testing.T) {
 		})
 	}
 }
+
+func TestHello(t *testing.T) {
+	mux := http.NewServeMux()
+	RegisterRoutes(mux)
+
+	tests := []struct {
+		name       string
+		method     string
+		url        string
+		wantStatus int
+		wantBody   map[string]any
+		wantAllow  string
+	}{
+		{
+			name:       "with name parameter",
+			method:     http.MethodGet,
+			url:        "/hello?name=Ruslan",
+			wantStatus: http.StatusOK,
+			wantBody:   map[string]any{"message": "hello, Ruslan"},
+		},
+		{
+			name:       "without name parameter",
+			method:     http.MethodGet,
+			url:        "/hello",
+			wantStatus: http.StatusOK,
+			wantBody:   map[string]any{"message": "hello, world"},
+		},
+		{
+			name:       "empty name parameter",
+			method:     http.MethodGet,
+			url:        "/hello?name=",
+			wantStatus: http.StatusOK,
+			wantBody:   map[string]any{"message": "hello, world"},
+		},
+		{
+			name:       "method not allowed",
+			method:     http.MethodPost,
+			url:        "/hello",
+			wantStatus: http.StatusMethodNotAllowed,
+			wantBody:   map[string]any{"error": "method not allowed"},
+			wantAllow:  http.MethodGet,
+		},
+		{
+			name:       "url encoded name",
+			method:     http.MethodGet,
+			url:        "/hello?name=Hello%20World",
+			wantStatus: http.StatusOK,
+			wantBody:   map[string]any{"message": "hello, Hello World"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(tt.method, tt.url, nil)
+			rec := httptest.NewRecorder()
+			mux.ServeHTTP(rec, req)
+
+			if rec.Code != tt.wantStatus {
+				t.Fatalf("status: got %d want %d", rec.Code, tt.wantStatus)
+			}
+
+			if tt.wantAllow != "" {
+				if got := rec.Header().Get("Allow"); got != tt.wantAllow {
+					t.Fatalf("Allow header: got %q want %q", got, tt.wantAllow)
+				}
+			}
+
+			var body map[string]any
+			if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+				t.Fatalf("decode: %v", err)
+			}
+
+			for k, v := range tt.wantBody {
+				if body[k] != v {
+					t.Fatalf("body[%s]: got %v want %v", k, body[k], v)
+				}
+			}
+		})
+	}
+}

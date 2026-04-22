@@ -58,6 +58,21 @@ func echo(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"echoed": req.Message})
 }
 
+func hello(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", http.MethodGet)
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]any{"error": "method not allowed"})
+		return
+	}
+
+	name := r.URL.Query().Get("name")
+	if name == "" {
+		name = "world"
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{"message": "hello, " + name})
+}
+
 func readJSON(r *http.Request, dest any) error {
 	return json.NewDecoder(r.Body).Decode(dest)
 }

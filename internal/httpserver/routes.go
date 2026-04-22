@@ -7,4 +7,5 @@ func RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/readyz", readyz)
 	mux.HandleFunc("/version", version)
 	mux.HandleFunc("/echo", echo)
+	mux.HandleFunc("/hello", hello)
 }
