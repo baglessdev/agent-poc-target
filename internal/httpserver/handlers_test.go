@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"runtime/debug"
 	"strings"
 	"testing"
 )
@@ -51,23 +52,58 @@ func TestReadyz(t *testing.T) {
 }
 
 func TestVersion(t *testing.T) {
-	mux := http.NewServeMux()
-	RegisterRoutes(mux)
-
-	req := httptest.NewRequest(http.MethodGet, "/version", nil)
-	rec := httptest.NewRecorder()
-	mux.ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusOK {
-		t.Fatalf("status: got %d want %d", rec.Code, http.StatusOK)
+	tests := []struct {
+		name        string
+		buildInfo   *debug.BuildInfo
+		buildInfoOk bool
+		wantVersion string
+	}{
+		{
+			name: "build info present",
+			buildInfo: &debug.BuildInfo{
+				Main: debug.Module{Version: "v1.2.3"},
+			},
+			buildInfoOk: true,
+			wantVersion: "v1.2.3",
+		},
+		{
+			name:        "build info absent",
+			buildInfo:   &debug.BuildInfo{},
+			buildInfoOk: true,
+			wantVersion: "dev",
+		},
+		{
+			name:        "build info nil",
+			buildInfo:   nil,
+			buildInfoOk: false,
+			wantVersion: "dev",
+		},
 	}
 
-	var body map[string]any
-	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
-		t.Fatalf("decode: %v", err)
-	}
-	if body["version"] != "dev" {
-		t.Fatalf("body: got %v want {version:dev}", body)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			orig := readBuildInfo
+			defer func() { readBuildInfo = orig }()
+			readBuildInfo = func() (*debug.BuildInfo, bool) {
+				return tt.buildInfo, tt.buildInfoOk
+			}
+
+			req := httptest.NewRequest(http.MethodGet, "/version", nil)
+			rec := httptest.NewRecorder()
+			version(rec, req)
+
+			if rec.Code != http.StatusOK {
+				t.Fatalf("status: got %d want %d", rec.Code, http.StatusOK)
+			}
+
+			var body map[string]any
+			if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+				t.Fatalf("decode: %v", err)
+			}
+			if body["version"] != tt.wantVersion {
+				t.Fatalf("body[version]: got %v want %v", body["version"], tt.wantVersion)
+			}
+		})
 	}
 }
 
