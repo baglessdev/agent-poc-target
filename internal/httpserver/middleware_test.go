@@ -264,3 +264,219 @@ func TestWithLogging_ContainsAllComponents(t *testing.T) {
 		t.Fatalf("request ID not found in log output: %q", logOutput)
 	}
 }
+
+func TestWithAPIKey_MissingHeader(t *testing.T) {
+	handler := WithAPIKey([]string{"valid-key"})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("status: got %d want %d", rec.Code, http.StatusUnauthorized)
+	}
+
+	body := strings.TrimSpace(rec.Body.String())
+	expectedBody := `{"error":"unauthorized"}`
+	if body != expectedBody {
+		t.Fatalf("body: got %q want %q", body, expectedBody)
+	}
+
+	authOutcome := rec.Header().Get("X-Auth-Outcome")
+	if authOutcome != "auth=missing" {
+		t.Fatalf("X-Auth-Outcome: got %q want %q", authOutcome, "auth=missing")
+	}
+}
+
+func TestWithAPIKey_EmptyHeader(t *testing.T) {
+	handler := WithAPIKey([]string{"valid-key"})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
+	req.Header.Set("X-API-Key", "")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("status: got %d want %d", rec.Code, http.StatusUnauthorized)
+	}
+
+	body := strings.TrimSpace(rec.Body.String())
+	expectedBody := `{"error":"unauthorized"}`
+	if body != expectedBody {
+		t.Fatalf("body: got %q want %q", body, expectedBody)
+	}
+
+	authOutcome := rec.Header().Get("X-Auth-Outcome")
+	if authOutcome != "auth=missing" {
+		t.Fatalf("X-Auth-Outcome: got %q want %q", authOutcome, "auth=missing")
+	}
+}
+
+func TestWithAPIKey_InvalidKey(t *testing.T) {
+	handler := WithAPIKey([]string{"valid-key"})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
+	req.Header.Set("X-API-Key", "invalid-key")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("status: got %d want %d", rec.Code, http.StatusUnauthorized)
+	}
+
+	body := strings.TrimSpace(rec.Body.String())
+	expectedBody := `{"error":"unauthorized"}`
+	if body != expectedBody {
+		t.Fatalf("body: got %q want %q", body, expectedBody)
+	}
+
+	authOutcome := rec.Header().Get("X-Auth-Outcome")
+	if authOutcome != "auth=invalid" {
+		t.Fatalf("X-Auth-Outcome: got %q want %q", authOutcome, "auth=invalid")
+	}
+}
+
+func TestWithAPIKey_ValidKey(t *testing.T) {
+	handlerCalled := false
+	handler := WithAPIKey([]string{"valid-key"})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlerCalled = true
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
+	req.Header.Set("X-API-Key", "valid-key")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status: got %d want %d", rec.Code, http.StatusOK)
+	}
+
+	if !handlerCalled {
+		t.Fatal("handler was not called")
+	}
+
+	authOutcome := rec.Header().Get("X-Auth-Outcome")
+	if authOutcome != "auth=ok" {
+		t.Fatalf("X-Auth-Outcome: got %q want %q", authOutcome, "auth=ok")
+	}
+}
+
+func TestWithAPIKey_MultipleKeys(t *testing.T) {
+	keys := []string{"key1", "key2", "key3"}
+	handler := WithAPIKey(keys)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	for _, key := range keys {
+		t.Run(key, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/protected", nil)
+			req.Header.Set("X-API-Key", key)
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, req)
+
+			if rec.Code != http.StatusOK {
+				t.Fatalf("status: got %d want %d", rec.Code, http.StatusOK)
+			}
+
+			authOutcome := rec.Header().Get("X-Auth-Outcome")
+			if authOutcome != "auth=ok" {
+				t.Fatalf("X-Auth-Outcome: got %q want %q", authOutcome, "auth=ok")
+			}
+		})
+	}
+}
+
+func TestWithAPIKey_HealthzPublic(t *testing.T) {
+	handler := WithAPIKey([]string{"valid-key"})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status: got %d want %d", rec.Code, http.StatusOK)
+	}
+
+	authOutcome := rec.Header().Get("X-Auth-Outcome")
+	if authOutcome != "" {
+		t.Fatalf("X-Auth-Outcome: got %q want empty (no auth on public path)", authOutcome)
+	}
+}
+
+func TestWithAPIKey_ReadyzPublic(t *testing.T) {
+	handler := WithAPIKey([]string{"valid-key"})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/readyz", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status: got %d want %d", rec.Code, http.StatusOK)
+	}
+
+	authOutcome := rec.Header().Get("X-Auth-Outcome")
+	if authOutcome != "" {
+		t.Fatalf("X-Auth-Outcome: got %q want empty (no auth on public path)", authOutcome)
+	}
+}
+
+func TestWithAPIKey_LoggingIntegration(t *testing.T) {
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	defer log.SetOutput(nil)
+
+	handler := WithLogging(WithRequestID(WithAPIKey([]string{"valid-key"})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))))
+
+	tests := []struct {
+		name           string
+		apiKey         string
+		wantAuthMarker string
+	}{
+		{
+			name:           "valid key",
+			apiKey:         "valid-key",
+			wantAuthMarker: "auth=ok",
+		},
+		{
+			name:           "invalid key",
+			apiKey:         "invalid-key",
+			wantAuthMarker: "auth=invalid",
+		},
+		{
+			name:           "missing key",
+			apiKey:         "",
+			wantAuthMarker: "auth=missing",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			buf.Reset()
+
+			req := httptest.NewRequest(http.MethodGet, "/protected", nil)
+			if tt.apiKey != "" {
+				req.Header.Set("X-API-Key", tt.apiKey)
+			}
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, req)
+
+			logOutput := buf.String()
+			if !strings.Contains(logOutput, tt.wantAuthMarker) {
+				t.Fatalf("log output missing %q: %q", tt.wantAuthMarker, logOutput)
+			}
+		})
+	}
+}
