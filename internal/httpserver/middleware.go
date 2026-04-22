@@ -1,4 +1,4 @@
-package main
+package httpserver
 
 import (
 	"crypto/rand"
@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func withRequestID(next http.Handler) http.Handler {
+func WithRequestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestID := r.Header.Get("X-Request-Id")
 		if requestID == "" {
@@ -35,7 +35,7 @@ func (lrw *loggingResponseWriter) WriteHeader(code int) {
 	lrw.ResponseWriter.WriteHeader(code)
 }
 
-func withLogging(next http.Handler) http.Handler {
+func WithLogging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		lrw := &loggingResponseWriter{

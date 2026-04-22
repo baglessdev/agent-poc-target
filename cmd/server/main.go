@@ -3,12 +3,14 @@ package main
 import (
 	"log"
 	"net/http"
+
+	"github.com/baglessdev/agent-poc-target/internal/httpserver"
 )
 
 func main() {
 	mux := http.NewServeMux()
-	registerRoutes(mux)
-	handler := withLogging(withRequestID(mux))
+	httpserver.RegisterRoutes(mux)
+	handler := httpserver.WithLogging(httpserver.WithRequestID(mux))
 
 	addr := ":8080"
 	log.Printf("listening on %s", addr)
