@@ -1,15 +1,9 @@
-package main
+package httpserver
 
 import (
 	"encoding/json"
 	"net/http"
 )
-
-func registerRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("/healthz", healthz)
-	mux.HandleFunc("/readyz", readyz)
-	mux.HandleFunc("/version", version)
-}
 
 func healthz(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})

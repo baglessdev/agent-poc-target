@@ -1,4 +1,4 @@
-package main
+package httpserver
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 )
 
 func TestWithRequestID_GeneratesValidID(t *testing.T) {
-	handler := withRequestID(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := WithRequestID(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -35,7 +35,7 @@ func TestWithRequestID_GeneratesValidID(t *testing.T) {
 }
 
 func TestWithRequestID_PassthroughExisting(t *testing.T) {
-	handler := withRequestID(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := WithRequestID(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -53,8 +53,8 @@ func TestWithRequestID_PassthroughExisting(t *testing.T) {
 
 func TestWithRequestID_OnHealthz(t *testing.T) {
 	mux := http.NewServeMux()
-	registerRoutes(mux)
-	handler := withRequestID(mux)
+	RegisterRoutes(mux)
+	handler := WithRequestID(mux)
 
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	rec := httptest.NewRecorder()
@@ -76,8 +76,8 @@ func TestWithRequestID_OnHealthz(t *testing.T) {
 
 func TestWithRequestID_OnReadyz(t *testing.T) {
 	mux := http.NewServeMux()
-	registerRoutes(mux)
-	handler := withRequestID(mux)
+	RegisterRoutes(mux)
+	handler := WithRequestID(mux)
 
 	req := httptest.NewRequest(http.MethodGet, "/readyz", nil)
 	rec := httptest.NewRecorder()
@@ -99,8 +99,8 @@ func TestWithRequestID_OnReadyz(t *testing.T) {
 
 func TestWithRequestID_OnVersion(t *testing.T) {
 	mux := http.NewServeMux()
-	registerRoutes(mux)
-	handler := withRequestID(mux)
+	RegisterRoutes(mux)
+	handler := WithRequestID(mux)
 
 	req := httptest.NewRequest(http.MethodGet, "/version", nil)
 	rec := httptest.NewRecorder()
@@ -125,7 +125,7 @@ func TestWithLogging_DurationNonNegative(t *testing.T) {
 	log.SetOutput(&buf)
 	defer log.SetOutput(nil)
 
-	handler := withLogging(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := WithLogging(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -166,8 +166,8 @@ func TestWithLogging_CapturesStatusCode(t *testing.T) {
 			defer log.SetOutput(nil)
 
 			mux := http.NewServeMux()
-			registerRoutes(mux)
-			handler := withLogging(mux)
+			RegisterRoutes(mux)
+			handler := WithLogging(mux)
 
 			req := httptest.NewRequest(http.MethodGet, tt.path, nil)
 			rec := httptest.NewRecorder()
@@ -188,8 +188,8 @@ func TestWithLogging_WrapsWithRequestID(t *testing.T) {
 	defer log.SetOutput(nil)
 
 	mux := http.NewServeMux()
-	registerRoutes(mux)
-	handler := withLogging(withRequestID(mux))
+	RegisterRoutes(mux)
+	handler := WithLogging(WithRequestID(mux))
 
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	rec := httptest.NewRecorder()
@@ -208,8 +208,8 @@ func TestWithLogging_WrappedByWithRequestID(t *testing.T) {
 	defer log.SetOutput(nil)
 
 	mux := http.NewServeMux()
-	registerRoutes(mux)
-	handler := withRequestID(withLogging(mux))
+	RegisterRoutes(mux)
+	handler := WithRequestID(WithLogging(mux))
 
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	rec := httptest.NewRecorder()
@@ -228,8 +228,8 @@ func TestWithLogging_ContainsAllComponents(t *testing.T) {
 	defer log.SetOutput(nil)
 
 	mux := http.NewServeMux()
-	registerRoutes(mux)
-	handler := withLogging(withRequestID(mux))
+	RegisterRoutes(mux)
+	handler := WithLogging(WithRequestID(mux))
 
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	rec := httptest.NewRecorder()

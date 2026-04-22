@@ -1,4 +1,4 @@
-package main
+package httpserver
 
 import (
 	"encoding/json"
@@ -9,7 +9,7 @@ import (
 
 func TestHealthz(t *testing.T) {
 	mux := http.NewServeMux()
-	registerRoutes(mux)
+	RegisterRoutes(mux)
 
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	rec := httptest.NewRecorder()
@@ -30,7 +30,7 @@ func TestHealthz(t *testing.T) {
 
 func TestReadyz(t *testing.T) {
 	mux := http.NewServeMux()
-	registerRoutes(mux)
+	RegisterRoutes(mux)
 
 	req := httptest.NewRequest(http.MethodGet, "/readyz", nil)
 	rec := httptest.NewRecorder()
@@ -51,7 +51,7 @@ func TestReadyz(t *testing.T) {
 
 func TestVersion(t *testing.T) {
 	mux := http.NewServeMux()
-	registerRoutes(mux)
+	RegisterRoutes(mux)
 
 	req := httptest.NewRequest(http.MethodGet, "/version", nil)
 	rec := httptest.NewRecorder()
