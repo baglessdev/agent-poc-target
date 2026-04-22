@@ -29,7 +29,7 @@ func TestFormatDuration(t *testing.T) {
 			want: "30s",
 		},
 		{
-			name: "fifty-nine seconds",
+			name: "fifty-nine seconds (edge)",
 			ms:   59999,
 			want: "59s",
 		},
