@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 )
 
@@ -15,6 +16,43 @@ func readyz(w http.ResponseWriter, _ *http.Request) {
 
 func version(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"version": "dev"})
+}
+
+func echo(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", http.MethodPost)
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]any{"error": "method not allowed"})
+		return
+	}
+
+	if r.Body == nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "body required"})
+		return
+	}
+
+	var req struct {
+		Message string `json:"message"`
+	}
+
+	if err := readJSON(r, &req); err != nil {
+		if err == io.EOF {
+			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "body required"})
+			return
+		}
+		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "invalid json"})
+		return
+	}
+
+	if req.Message == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "message required"})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{"echoed": req.Message})
+}
+
+func readJSON(r *http.Request, dest any) error {
+	return json.NewDecoder(r.Body).Decode(dest)
 }
 
 func writeJSON(w http.ResponseWriter, status int, body any) {
