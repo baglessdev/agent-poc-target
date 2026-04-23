@@ -51,6 +51,35 @@ func TestReadyz(t *testing.T) {
 	}
 }
 
+func TestNow(t *testing.T) {
+	mux := http.NewServeMux()
+	RegisterRoutes(mux)
+
+	req := httptest.NewRequest(http.MethodGet, "/now", nil)
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status: got %d want %d", rec.Code, http.StatusOK)
+	}
+
+	var body map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	timeVal, ok := body["time"]
+	if !ok {
+		t.Fatalf("body: missing time field")
+	}
+	timeFloat, ok := timeVal.(float64)
+	if !ok {
+		t.Fatalf("body[time]: got type %T want float64", timeVal)
+	}
+	if timeFloat <= 0 {
+		t.Fatalf("body[time]: got %v want positive value", timeFloat)
+	}
+}
+
 func TestVersion(t *testing.T) {
 	tests := []struct {
 		name        string
