@@ -1,0 +1,9 @@
+package util
+
+// Abs returns the absolute value of n.
+func Abs(n int) int {
+	if n < 0 {
+		return -n
+	}
+	return n
+}
