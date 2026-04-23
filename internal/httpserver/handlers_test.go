@@ -7,6 +7,7 @@ import (
 	"runtime/debug"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestHealthz(t *testing.T) {
@@ -77,6 +78,35 @@ func TestNow(t *testing.T) {
 	}
 	if timeFloat <= 0 {
 		t.Fatalf("body[time]: got %v want positive value", timeFloat)
+	}
+}
+
+func TestDatetime(t *testing.T) {
+	mux := http.NewServeMux()
+	RegisterRoutes(mux)
+
+	req := httptest.NewRequest(http.MethodGet, "/datetime", nil)
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status: got %d want %d", rec.Code, http.StatusOK)
+	}
+
+	var body map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	datetimeVal, ok := body["datetime"]
+	if !ok {
+		t.Fatalf("body: missing datetime field")
+	}
+	datetimeStr, ok := datetimeVal.(string)
+	if !ok {
+		t.Fatalf("body[datetime]: got type %T want string", datetimeVal)
+	}
+	if _, err := time.Parse(time.RFC3339, datetimeStr); err != nil {
+		t.Fatalf("body[datetime]: invalid RFC3339 format: %v", err)
 	}
 }
 
