@@ -297,8 +297,15 @@ func TestSum(t *testing.T) {
 			wantBody:   map[string]any{"error": "invalid number"},
 		},
 		{
-			name:       "method not allowed",
+			name:       "post method allowed",
 			method:     http.MethodPost,
+			url:        "/sum?a=5&b=3",
+			wantStatus: http.StatusOK,
+			wantBody:   map[string]any{"sum": float64(8)},
+		},
+		{
+			name:       "method not allowed",
+			method:     http.MethodPut,
 			url:        "/sum?a=5&b=3",
 			wantStatus: http.StatusMethodNotAllowed,
 			wantBody:   map[string]any{"error": "method not allowed"},
