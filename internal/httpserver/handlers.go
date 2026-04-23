@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"runtime/debug"
+	"time"
 )
 
 var readBuildInfo = debug.ReadBuildInfo
@@ -15,6 +16,10 @@ func healthz(w http.ResponseWriter, _ *http.Request) {
 
 func readyz(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"ready": true})
+}
+
+func now(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{"time": time.Now().Unix()})
 }
 
 func version(w http.ResponseWriter, _ *http.Request) {
