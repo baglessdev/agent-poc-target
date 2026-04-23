@@ -214,3 +214,124 @@ func TestEcho(t *testing.T) {
 		})
 	}
 }
+
+func TestSum(t *testing.T) {
+	mux := http.NewServeMux()
+	RegisterRoutes(mux)
+
+	tests := []struct {
+		name       string
+		method     string
+		url        string
+		wantStatus int
+		wantBody   map[string]any
+	}{
+		{
+			name:       "valid positive integers",
+			method:     http.MethodGet,
+			url:        "/sum?a=5&b=3",
+			wantStatus: http.StatusOK,
+			wantBody:   map[string]any{"sum": float64(8)},
+		},
+		{
+			name:       "negative integers",
+			method:     http.MethodGet,
+			url:        "/sum?a=-10&b=5",
+			wantStatus: http.StatusOK,
+			wantBody:   map[string]any{"sum": float64(-5)},
+		},
+		{
+			name:       "zero values",
+			method:     http.MethodGet,
+			url:        "/sum?a=0&b=0",
+			wantStatus: http.StatusOK,
+			wantBody:   map[string]any{"sum": float64(0)},
+		},
+		{
+			name:       "large numbers",
+			method:     http.MethodGet,
+			url:        "/sum?a=1000000&b=2000000",
+			wantStatus: http.StatusOK,
+			wantBody:   map[string]any{"sum": float64(3000000)},
+		},
+		{
+			name:       "missing parameter a",
+			method:     http.MethodGet,
+			url:        "/sum?b=5",
+			wantStatus: http.StatusBadRequest,
+			wantBody:   map[string]any{"error": "parameter required"},
+		},
+		{
+			name:       "missing parameter b",
+			method:     http.MethodGet,
+			url:        "/sum?a=5",
+			wantStatus: http.StatusBadRequest,
+			wantBody:   map[string]any{"error": "parameter required"},
+		},
+		{
+			name:       "missing both parameters",
+			method:     http.MethodGet,
+			url:        "/sum",
+			wantStatus: http.StatusBadRequest,
+			wantBody:   map[string]any{"error": "parameter required"},
+		},
+		{
+			name:       "invalid number a",
+			method:     http.MethodGet,
+			url:        "/sum?a=abc&b=5",
+			wantStatus: http.StatusBadRequest,
+			wantBody:   map[string]any{"error": "invalid number"},
+		},
+		{
+			name:       "invalid number b",
+			method:     http.MethodGet,
+			url:        "/sum?a=5&b=xyz",
+			wantStatus: http.StatusBadRequest,
+			wantBody:   map[string]any{"error": "invalid number"},
+		},
+		{
+			name:       "float input",
+			method:     http.MethodGet,
+			url:        "/sum?a=5.5&b=3.3",
+			wantStatus: http.StatusBadRequest,
+			wantBody:   map[string]any{"error": "invalid number"},
+		},
+		{
+			name:       "post method allowed",
+			method:     http.MethodPost,
+			url:        "/sum?a=5&b=3",
+			wantStatus: http.StatusOK,
+			wantBody:   map[string]any{"sum": float64(8)},
+		},
+		{
+			name:       "method not allowed",
+			method:     http.MethodPut,
+			url:        "/sum?a=5&b=3",
+			wantStatus: http.StatusMethodNotAllowed,
+			wantBody:   map[string]any{"error": "method not allowed"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(tt.method, tt.url, nil)
+			rec := httptest.NewRecorder()
+			mux.ServeHTTP(rec, req)
+
+			if rec.Code != tt.wantStatus {
+				t.Fatalf("status: got %d want %d", rec.Code, tt.wantStatus)
+			}
+
+			var body map[string]any
+			if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+				t.Fatalf("decode: %v", err)
+			}
+
+			for k, v := range tt.wantBody {
+				if body[k] != v {
+					t.Fatalf("body[%s]: got %v want %v", k, body[k], v)
+				}
+			}
+		})
+	}
+}

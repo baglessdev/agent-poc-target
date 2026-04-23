@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"runtime/debug"
+	"strconv"
 	"time"
 )
 
@@ -61,6 +62,42 @@ func echo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{"echoed": req.Message})
+}
+
+func sum(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodPost {
+		w.Header().Set("Allow", "GET, POST")
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]any{"error": "method not allowed"})
+		return
+	}
+
+	query := r.URL.Query()
+	aStr := query.Get("a")
+	bStr := query.Get("b")
+
+	if aStr == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "parameter required"})
+		return
+	}
+	if bStr == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "parameter required"})
+		return
+	}
+
+	a, err := strconv.ParseInt(aStr, 10, 64)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "invalid number"})
+		return
+	}
+
+	b, err := strconv.ParseInt(bStr, 10, 64)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "invalid number"})
+		return
+	}
+
+	result := a + b
+	writeJSON(w, http.StatusOK, map[string]any{"sum": float64(result)})
 }
 
 func readJSON(r *http.Request, dest any) error {
