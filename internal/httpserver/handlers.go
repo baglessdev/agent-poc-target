@@ -97,7 +97,7 @@ func sum(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result := a + b
-	writeJSON(w, http.StatusOK, map[string]any{"sum": result})
+	writeJSON(w, http.StatusOK, map[string]any{"sum": float64(result)})
 }
 
 func readJSON(r *http.Request, dest any) error {
