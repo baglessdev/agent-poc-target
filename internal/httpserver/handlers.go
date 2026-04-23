@@ -23,6 +23,10 @@ func now(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"time": time.Now().Unix()})
 }
 
+func datetime(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{"datetime": time.Now().Format(time.RFC3339)})
+}
+
 func version(w http.ResponseWriter, _ *http.Request) {
 	v := "dev"
 	if info, ok := readBuildInfo(); ok && info.Main.Version != "" {
