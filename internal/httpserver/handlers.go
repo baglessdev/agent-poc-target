@@ -84,13 +84,13 @@ func sum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a, err := parseInt64(aStr)
+	a, err := strconv.ParseInt(aStr, 10, 64)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "invalid number"})
 		return
 	}
 
-	b, err := parseInt64(bStr)
+	b, err := strconv.ParseInt(bStr, 10, 64)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "invalid number"})
 		return
@@ -108,8 +108,4 @@ func writeJSON(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(body)
-}
-
-func parseInt64(s string) (int64, error) {
-	return strconv.ParseInt(s, 10, 64)
 }
