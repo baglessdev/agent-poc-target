@@ -8,4 +8,5 @@ func RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/now", now)
 	mux.HandleFunc("/version", version)
 	mux.HandleFunc("/echo", echo)
+	mux.HandleFunc("/sum", sum)
 }
